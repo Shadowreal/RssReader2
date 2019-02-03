@@ -8,36 +8,83 @@
 
 import UIKit
 
-class MyTableViewController: UITableViewController {
+class MyTableViewController: UITableViewController, XMLParserDelegate {
 
+    var posts: [Post] = []
+    var parser = XMLParser()
+    
+    
+    var postElement: Post? = nil
+    var tempElemen: String = ""
+    
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        parser = XMLParser(contentsOf: URL(string: "https://news.tut.by/rss/index.rss")!)!
+        parser.delegate = self
+        parser.parse()
 
-        // Uncomment the following line to preserve selection between presentations
-        // self.clearsSelectionOnViewWillAppear = false
-
-        // Uncomment the following line to display an Edit button in the navigation bar for this view controller.
-        // self.navigationItem.rightBarButtonItem = self.editButtonItem
+      
     }
 
-    // MARK: - Table view data source
+   
+    // MARK: - parser function
+    
+    func parser(_ parser: XMLParser, parseErrorOccurred parseError: Error) {
+        print("Parser error - \(parseError)")
+    }
 
+    func parser(_ parser: XMLParser, didStartElement elementName: String, namespaceURI: String?, qualifiedName qName: String?, attributes attributeDict: [String : String] = [:]) {
+        tempElemen = elementName
+        if tempElemen == "item" {
+            postElement = Post(title: "", link: "", date: "")
+        }
+    }
+    
+    
+    func parser(_ parser: XMLParser, didEndElement elementName: String, namespaceURI: String?, qualifiedName qName: String?) {
+        if elementName == "item" {
+            if let post = postElement {
+                posts.append(post)
+            }
+            postElement = nil
+        }
+    }
+    
+    func parser(_ parser: XMLParser, foundCharacters string: String) {
+        if let post = postElement {
+            
+            if tempElemen == "title" {
+                postElement?.title = post.title! + string
+            }
+            
+            if tempElemen == "link" {
+                postElement?.link = post.link! + string
+            }
+          
+            if tempElemen == "date" {
+                postElement?.date = post.date! + string
+            }
+        }
+    }
+    
     override func numberOfSections(in tableView: UITableView) -> Int {
-        // #warning Incomplete implementation, return the number of sections
+        
         return 0
     }
 
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        // #warning Incomplete implementation, return the number of rows
+       
         return 0
     }
 
   
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "reuseIdentifier", for: indexPath)
+        let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
 
-        // Configure the cell...
-
+        cell.textLabel?.text = posts[indexPath.row].title
+        cell.detailTextLabel?.text = posts[indexPath.row].link
+    
         return cell
     }
     
